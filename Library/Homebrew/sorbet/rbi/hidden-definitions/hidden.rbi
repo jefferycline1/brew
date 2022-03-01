@@ -12,18 +12,6 @@ class AbstractDownloadStrategy
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-class ActiveRecordColumnTypeHelper
-  extend ::T::Sig
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-module ActiveSupport
-  def parse_json_times(); end
-
-  def parse_json_times=(val); end
-end
-
 class ActiveSupport::Deprecation
   def self.deprecation_warning(*args, &block); end
 
@@ -34,28 +22,6 @@ end
 
 module ActiveSupport::ForkTracker::CoreExtPrivate
   include ::ActiveSupport::ForkTracker::CoreExt
-end
-
-module ActiveSupport
-  def self.escape_html_entities_in_json(*args, &block); end
-
-  def self.escape_html_entities_in_json=(arg); end
-
-  def self.json_encoder(*args, &block); end
-
-  def self.json_encoder=(arg); end
-
-  def self.parse_json_times(); end
-
-  def self.parse_json_times=(val); end
-
-  def self.time_precision(*args, &block); end
-
-  def self.time_precision=(arg); end
-
-  def self.use_standard_json_time_format(*args, &block); end
-
-  def self.use_standard_json_time_format=(arg); end
 end
 
 class Addrinfo
@@ -996,6 +962,8 @@ class Cask::DSL::Caveats
 
   def reboot(*args); end
 
+  def requires_rosetta(*args); end
+
   def unsigned_accessibility(*args); end
 
   def zsh_path_helper(*args); end
@@ -1197,6 +1165,14 @@ module DidYouMean::Correctable
   def to_s(); end
 end
 
+class DidYouMean::Formatter
+  def message_for(corrections); end
+end
+
+class DidYouMean::Formatter
+  def self.message_for(corrections); end
+end
+
 module DidYouMean::Jaro
   def self.distance(str1, str2); end
 end
@@ -1241,12 +1217,16 @@ class DidYouMean::NullChecker
   def initialize(*arg); end
 end
 
-class DidYouMean::PlainFormatter
-  def message_for(corrections); end
+class DidYouMean::PatternKeyNameChecker
+  def corrections(); end
+
+  def initialize(no_matching_pattern_key_error); end
 end
 
-class DidYouMean::PlainFormatter
+class DidYouMean::PatternKeyNameChecker
 end
+
+DidYouMean::PlainFormatter = DidYouMean::Formatter
 
 class DidYouMean::RequirePathChecker
   def corrections(); end
@@ -1310,6 +1290,8 @@ module DidYouMean
   def self.formatter(); end
 
   def self.formatter=(formatter); end
+
+  def self.spell_checkers(); end
 end
 
 class Dir
@@ -1323,12 +1305,6 @@ class Dir
 end
 
 module DiskUsageExtension
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-class DynamicMixinCompiler
-  extend ::T::Sig
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
 end
@@ -2431,48 +2407,6 @@ module Gem
   def self.remove_unresolved_default_spec(spec); end
 end
 
-module GetText
-end
-
-class GetText::PoParser
-  def _(x); end
-
-  def _reduce_10(val, _values, result); end
-
-  def _reduce_12(val, _values, result); end
-
-  def _reduce_13(val, _values, result); end
-
-  def _reduce_14(val, _values, result); end
-
-  def _reduce_15(val, _values, result); end
-
-  def _reduce_5(val, _values, result); end
-
-  def _reduce_8(val, _values, result); end
-
-  def _reduce_9(val, _values, result); end
-
-  def _reduce_none(val, _values, result); end
-
-  def on_comment(comment); end
-
-  def on_message(msgid, msgstr); end
-
-  def parse(str, data, ignore_fuzzy=T.unsafe(nil)); end
-
-  def unescape(orig); end
-  Racc_arg = ::T.let(nil, ::T.untyped)
-  Racc_debug_parser = ::T.let(nil, ::T.untyped)
-  Racc_token_to_s_table = ::T.let(nil, ::T.untyped)
-end
-
-class GetText::PoParser
-end
-
-module GetText
-end
-
 module GitHub::API
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -2606,6 +2540,8 @@ module Homebrew::EnvConfig
 
   def self.display_install_times?(); end
 
+  def self.docker_registry_basic_auth_token(); end
+
   def self.docker_registry_token(); end
 
   def self.editor(); end
@@ -2659,6 +2595,8 @@ module Homebrew::EnvConfig
   def self.no_compat?(); end
 
   def self.no_emoji?(); end
+
+  def self.no_env_hints?(); end
 
   def self.no_github_api?(); end
 
@@ -2787,26 +2725,6 @@ module HostEnvironmentSimulatorHelper
 end
 
 module HostEnvironmentSimulatorHelper
-end
-
-module I18n
-  def self.cache_key_digest(); end
-
-  def self.cache_key_digest=(key_digest); end
-
-  def self.cache_namespace(); end
-
-  def self.cache_namespace=(namespace); end
-
-  def self.cache_store(); end
-
-  def self.cache_store=(store); end
-
-  def self.fallbacks(); end
-
-  def self.fallbacks=(fallbacks); end
-
-  def self.perform_caching?(); end
 end
 
 class IO
@@ -3242,6 +3160,8 @@ module MachOShim
 end
 
 class MessagePack::Packer
+  def reset(); end
+
   def write_bin(arg); end
 
   def write_bin_header(arg); end
@@ -3564,13 +3484,7 @@ end
 
 Net::HTTPFatalErrorCode = Net::HTTPClientError
 
-class Net::HTTPInformation
-end
-
-Net::HTTPInformationCode::EXCEPTION_TYPE = Net::HTTPError
-
-class Net::HTTPInformation
-end
+Net::HTTPInformationCode = Net::HTTPInformation
 
 class Net::HTTPLoopDetected
   HAS_BODY = ::T.let(nil, ::T.untyped)
@@ -3630,13 +3544,7 @@ Net::HTTPServerErrorCode = Net::HTTPServerError
 
 Net::HTTPSession = Net::HTTP
 
-class Net::HTTPSuccess
-end
-
-Net::HTTPSuccessCode::EXCEPTION_TYPE = Net::HTTPError
-
-class Net::HTTPSuccess
-end
+Net::HTTPSuccessCode = Net::HTTPSuccess
 
 class Net::HTTPURITooLong
   HAS_BODY = ::T.let(nil, ::T.untyped)
@@ -3728,6 +3636,7 @@ class Object
   HOMEBREW_DEFAULT_PREFIX = ::T.let(nil, ::T.untyped)
   HOMEBREW_DEFAULT_REPOSITORY = ::T.let(nil, ::T.untyped)
   HOMEBREW_DEFAULT_TEMP = ::T.let(nil, ::T.untyped)
+  HOMEBREW_GITHUB_PACKAGES_AUTH = ::T.let(nil, ::T.untyped)
   HOMEBREW_LIBRARY = ::T.let(nil, ::T.untyped)
   HOMEBREW_LIBRARY_PATH = ::T.let(nil, ::T.untyped)
   HOMEBREW_LINKED_KEGS = ::T.let(nil, ::T.untyped)
@@ -4132,11 +4041,6 @@ end
 class Pathname
   include ::ELFShim
   include ::MachOShim
-  def fnmatch?(*arg); end
-
-  def glob(*arg); end
-
-  def make_symlink(arg); end
 end
 
 class Pathname
@@ -4232,6 +4136,12 @@ class RBI::File
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
+class RBI::Formatter
+  extend ::T::Sig
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
+end
+
 class RBI::Index
   include ::T::Enumerable
 end
@@ -4279,6 +4189,12 @@ class RBI::Rewriters::Merge::Conflict
 end
 
 class RBI::Rewriters::Merge
+  extend ::T::Sig
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
+end
+
+class RBI::Rewriters::RemoveKnownDefinitions::Operation
   extend ::T::Sig
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -5352,6 +5268,13 @@ end
 module RuboCop::RSpec::ExpectOffense
 end
 
+class RuboCop::RSpec::ParallelFormatter
+  def dump_pending(*arg); end
+end
+
+class RuboCop::RSpec::ParallelFormatter
+end
+
 class RubyLex
   include ::RubyToken
   def Fail(err=T.unsafe(nil), *rest); end
@@ -6338,10 +6261,6 @@ class Set
 
   def ===(o); end
 
-  def compare_by_identity(); end
-
-  def compare_by_identity?(); end
-
   def divide(&func); end
 
   def eql?(o); end
@@ -6810,6 +6729,10 @@ class Struct
   def filter(*arg); end
 end
 
+class Symbol
+  def to_msgpack_ext(); end
+end
+
 class SystemCommand::Result
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -6830,16 +6753,7 @@ class Tap
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-class Tapioca::Compilers::Dsl::Base
-  extend ::T::Sig
-  extend ::T::Helpers
-  extend ::T::Private::Abstract::Hooks
-  extend ::T::InterfaceWrapper::Helpers
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-module Tapioca::Reflection
+module Tapioca
   extend ::T::Sig
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -6847,8 +6761,6 @@ end
 
 class Tempfile
   def _close(); end
-
-  def inspect(); end
 end
 
 class Tempfile::Remover

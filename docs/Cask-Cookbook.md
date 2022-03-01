@@ -361,7 +361,7 @@ When `caveats` is a string, it is evaluated at compile time. The following metho
 | `token`            | the Cask token
 | `version`          | the Cask version
 | `homepage`         | the Cask homepage
-| `caskroom_path`    | the containing directory for all staged Casks, typically `/usr/local/Caskroom` (only available with block form)
+| `caskroom_path`    | the containing directory for this Cask, typically `/usr/local/Caskroom/<token>` (only available with block form)
 | `staged_path`      | the staged location for this Cask, including version number: `/usr/local/Caskroom/<token>/<version>` (only available with block form)
 
 Example:
@@ -470,6 +470,7 @@ The available values for macOS releases are:
 | `:mojave`          | `10.14`
 | `:catalina`        | `10.15`
 | `:big_sur`         | `11.0`
+| `:monterey`        | `12.0`
 
 Only major releases are covered (version numbers containing a single dot). The symbol form is used for readability. The following are all valid ways to enumerate the exact macOS release requirements for a Cask:
 
@@ -1099,7 +1100,7 @@ When a plain URL string is insufficient to fetch a file, additional information 
 
 | key                | value       |
 | ------------------ | ----------- |
-| `verified:`        | a string repeating the beginning of `url`, for verification purposes. [See below](#when-url-and-homepage-hostnames-differ-add-verified).
+| `verified:`        | a string repeating the beginning of `url`, for verification purposes. [See below](#when-url-and-homepage-domains-differ-add-verified).
 | `using:`           | the symbol `:post` is the only legal value
 | `cookies:`         | a hash of cookies to be set in the download request
 | `referer:`         | a string holding the URL to set as referer in the download request
@@ -1113,7 +1114,7 @@ Example of using `referer:`: [rrootage.rb](https://github.com/Homebrew/homebrew-
 
 Example of using `header:`: [issue-325182724](https://github.com/Homebrew/brew/pull/6545#issue-325182724)
 
-#### When URL and Homepage Hostnames Differ, Add `verified:`
+#### When URL and Homepage Domains Differ, Add `verified:`
 
 When the domains of `url` and `homepage` differ, the discrepancy should be documented with the `verified:` parameter, repeating the smallest possible portion of the URL that uniquely identifies the app or vendor, excluding the protocol. Example: [`shotcut.rb`](https://github.com/Homebrew/homebrew-cask/blob/08733296b49c59c58b6beeada59ed4207cef60c3/Casks/shotcut.rb#L5L6).
 
@@ -1268,7 +1269,7 @@ The examples above can become hard to read, however. Since many of these changes
 
 Similar to `dots_to_hyphens`, we provide all logical permutations of `{dots,hyphens,underscores}_to_{dots,hyphens,underscores}`. The same applies to `no_dots` in the form of `no_{dots,hyphens,underscores}`, with an extra `no_dividers` that applies all of those at once.
 
-Finally, there are `before_colon` and `after_colon` that act like their `comma` counterparts. These four are extra special to allow for otherwise complex cases, and should be used sparingly. There should be no more than one of `,` and `:` per `version`. Use `,` first, and `:` only if absolutely necessary.
+Finally, there is `csv` that returns an array of comma-separated values. `csv`, `before_comma` and `after_comma` are extra special to allow for otherwise complex cases, and should be used sparingly. There should be no more than two of `,` per `version`.
 
 ### Stanza: `zap`
 

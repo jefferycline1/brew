@@ -118,6 +118,33 @@ module Homebrew
       @aliases ||= Formula.aliases + Formula.tap_aliases
     end
 
+    SYNCED_VERSIONS_FORMULAE_FILE = "synced_versions_formulae.json"
+
+    def audit_synced_versions_formulae
+      return unless formula.tap
+
+      synced_versions_formulae_file = formula.tap.path/SYNCED_VERSIONS_FORMULAE_FILE
+      return unless synced_versions_formulae_file.file?
+
+      name = formula.name
+      version = formula.version
+
+      synced_versions_formulae = JSON.parse(synced_versions_formulae_file.read)
+      synced_versions_formulae.each do |synced_version_formulae|
+        next unless synced_version_formulae.include? name
+
+        synced_version_formulae.each do |synced_formula|
+          next if synced_formula == name
+
+          if (synced_version = Formulary.factory(synced_formula).version) != version
+            problem "Version of `#{synced_formula}` (#{synced_version}) should match version of `#{name}` (#{version})"
+          end
+        end
+
+        break
+      end
+    end
+
     def audit_formula_name
       name = formula.name
 
@@ -261,6 +288,13 @@ module Homebrew
           problem "Dependency '#{dep.name}' is marked as :run. Remove :run; it is a no-op." if dep.tags.include?(:run)
 
           next unless @core_tap
+
+          unless dep_f.tap.core_tap?
+            problem <<~EOS
+              Dependency '#{dep.name}' is not in homebrew/core. Formulae in homebrew/core
+              should not have dependencies in external taps.
+            EOS
+          end
 
           # we want to allow uses_from_macos for aliases but not bare dependencies
           if self.class.aliases.include?(dep.name) && spec.uses_from_macos_names.exclude?(dep.name)
@@ -647,6 +681,8 @@ module Homebrew
     end
 
     def audit_revision_and_version_scheme
+      new_formula_problem("New formulae should not define a revision.") if @new_formula && !formula.revision.zero?
+
       return unless @git
       return unless formula.tap # skip formula not from core or any taps
       return unless formula.tap.git? # git log is required

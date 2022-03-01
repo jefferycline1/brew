@@ -38,7 +38,7 @@ class FormulaInstaller
 
   attr_predicate :installed_as_dependency?, :installed_on_request?
   attr_predicate :show_summary_heading?, :show_header?
-  attr_predicate :force_bottle?, :ignore_deps?, :only_deps?, :interactive?, :git?, :force?, :keep_tmp?
+  attr_predicate :force_bottle?, :ignore_deps?, :only_deps?, :interactive?, :git?, :force?, :overwrite?, :keep_tmp?
   attr_predicate :verbose?, :debug?, :quiet?
 
   # TODO: Remove when removed from `test-bot`.
@@ -64,6 +64,7 @@ class FormulaInstaller
     cc: nil,
     options: Options.new,
     force: false,
+    overwrite: false,
     debug: false,
     quiet: false,
     verbose: false
@@ -71,6 +72,7 @@ class FormulaInstaller
     @formula = formula
     @env = env
     @force = force
+    @overwrite = overwrite
     @keep_tmp = keep_tmp
     @link_keg = !formula.keg_only? || link_keg
     @show_header = show_header
@@ -215,6 +217,7 @@ class FormulaInstaller
     forbidden_license_check
 
     check_install_sanity
+    install_fetch_deps unless ignore_deps?
   end
 
   sig { void }
@@ -341,6 +344,19 @@ class FormulaInstaller
     raise CannotInstallFormulaError,
           "You must `brew unpin #{pinned_unsatisfied_deps * " "}` as installing " \
           "#{formula.full_name} requires the latest version of pinned dependencies"
+  end
+
+  sig { void }
+  def install_fetch_deps
+    return if @compute_dependencies.blank?
+
+    compute_dependencies(use_cache: false) if @compute_dependencies.any? do |dep, options|
+      next false unless dep.tags == [:build, :test]
+
+      fetch_dependencies
+      install_dependency(dep, options)
+      true
+    end
   end
 
   def build_bottle_preinstall
@@ -937,7 +953,7 @@ class FormulaInstaller
 
     unless link_keg
       begin
-        keg.optlink(verbose: verbose?)
+        keg.optlink(verbose: verbose?, overwrite: overwrite?)
       rescue Keg::LinkError => e
         ofail "Failed to create #{formula.opt_prefix}"
         puts "Things that depend on #{formula.full_name} will probably not build."
@@ -968,7 +984,7 @@ class FormulaInstaller
     backup_dir = HOMEBREW_CACHE/"Backup"
 
     begin
-      keg.link(verbose: verbose?)
+      keg.link(verbose: verbose?, overwrite: overwrite?)
     rescue Keg::ConflictError => e
       conflict_file = e.dst
       if formula.link_overwrite?(conflict_file) && !link_overwrite_backup.key?(conflict_file)
@@ -1029,6 +1045,12 @@ class FormulaInstaller
       service_path = formula.systemd_service_path
       service_path.atomic_write(formula.service.to_systemd_unit)
       service_path.chmod 0644
+
+      if formula.service.timed?
+        timer_path = formula.systemd_timer_path
+        timer_path.atomic_write(formula.service.to_systemd_timer)
+        timer_path.chmod 0644
+      end
     end
 
     service = if formula.service?
@@ -1207,11 +1229,7 @@ class FormulaInstaller
 
     keg = Keg.new(formula.prefix)
     skip_linkage = formula.bottle_specification.skip_relocation?
-    # TODO: Remove `with_env` when bottles are built with RPATH relocation enabled
-    # https://github.com/Homebrew/brew/issues/11329
-    with_env(HOMEBREW_RELOCATE_RPATHS: "1") do
-      keg.replace_placeholders_with_locations tab.changed_files, skip_linkage: skip_linkage
-    end
+    keg.replace_placeholders_with_locations tab.changed_files, skip_linkage: skip_linkage
   end
 
   sig { params(output: T.nilable(String)).void }
@@ -1288,7 +1306,8 @@ class FormulaInstaller
       next unless SPDX.licenses_forbid_installation? dep_f.license, forbidden_licenses
 
       raise CannotInstallFormulaError, <<~EOS
-        The installation of #{formula.name} has a dependency on #{dep.name} where all its licenses are forbidden:
+        The installation of #{formula.name} has a dependency on #{dep.name} where all
+        its licenses are forbidden by HOMEBREW_FORBIDDEN_LICENSES:
           #{SPDX.license_expression_to_string dep_f.license}.
       EOS
     end
@@ -1298,7 +1317,8 @@ class FormulaInstaller
     return unless SPDX.licenses_forbid_installation? formula.license, forbidden_licenses
 
     raise CannotInstallFormulaError, <<~EOS
-      #{formula.name}'s licenses are all forbidden: #{SPDX.license_expression_to_string formula.license}.
+      #{formula.name}'s licenses are all forbidden by HOMEBREW_FORBIDDEN_LICENSES:
+        #{SPDX.license_expression_to_string formula.license}.
     EOS
   end
 end

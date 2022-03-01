@@ -121,6 +121,8 @@ begin
     possible_tap = Tap.fetch(possible_tap.first) if possible_tap
 
     if !possible_tap || possible_tap.installed? || Tap.untapped_official_taps.include?(possible_tap.name)
+      # Check for cask explicitly because it's very common in old guides
+      odie "`brew cask` is no longer a `brew` command. Use `brew <command> --cask` instead." if cmd == "cask"
       odie "Unknown command: #{cmd}"
     end
 
@@ -179,10 +181,13 @@ rescue MethodDeprecatedError => e
   exit 1
 rescue Exception => e # rubocop:disable Lint/RescueException
   onoe e
-  if internal_cmd && defined?(OS::ISSUES_URL) &&
-     !Homebrew::EnvConfig.no_auto_update?
-    $stderr.puts "#{Tty.bold}Please report this issue:#{Tty.reset}"
-    $stderr.puts "  #{Formatter.url(OS::ISSUES_URL)}"
+  if internal_cmd && defined?(OS::ISSUES_URL)
+    if Homebrew::EnvConfig.no_auto_update?
+      $stderr.puts "#{Tty.bold}Do not report this issue until you've run `brew update` and tried again.#{Tty.reset}"
+    else
+      $stderr.puts "#{Tty.bold}Please report this issue:#{Tty.reset}"
+      $stderr.puts "  #{Formatter.url(OS::ISSUES_URL)}"
+    end
   end
   $stderr.puts e.backtrace
   exit 1

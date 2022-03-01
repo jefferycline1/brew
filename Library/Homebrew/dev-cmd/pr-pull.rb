@@ -27,12 +27,13 @@ module Homebrew
       switch "-n", "--dry-run",
              description: "Print what would be done rather than doing it."
       switch "--clean",
+             depends_on:  "--no-autosquash",
              description: "Do not amend the commits from pull requests."
       switch "--keep-old",
              description: "If the formula specifies a rebuild version, " \
                           "attempt to preserve its value in the generated DSL."
-      switch "--autosquash",
-             description: "Automatically reformat and reword commits in the pull request to our "\
+      switch "--no-autosquash",
+             description: "Skip automatically reformatting and rewording commits in the pull request to our "\
                           "preferred format."
       switch "--branch-okay",
              description: "Do not warn if pulling to a branch besides the repository default (useful for testing)."
@@ -45,7 +46,6 @@ module Homebrew
       flag   "--committer=",
              description: "Specify a committer name and email in `git`'s standard author format."
       flag   "--message=",
-             depends_on:  "--autosquash",
              description: "Message to include when autosquashing revision bumps, deletions, and rebuilds."
       flag   "--artifact=",
              description: "Download artifacts with the specified name (default: `bottles`)."
@@ -62,7 +62,7 @@ module Homebrew
       comma_array "--ignore-missing-artifacts=",
                   description: "Comma-separated list of workflows which can be ignored if they have not been run."
 
-      conflicts "--clean", "--autosquash"
+      conflicts "--no-autosquash", "--message"
 
       named_args :pull_request, min: 1
     end
@@ -218,7 +218,7 @@ module Homebrew
 
     # Generate a bidirectional mapping of commits <=> formula files.
     files_to_commits = {}
-    commits_to_files = commits.map do |commit|
+    commits_to_files = commits.to_h do |commit|
       files = Utils.safe_popen_read("git", "-C", path, "diff-tree", "--diff-filter=AMD",
                                     "-r", "--name-only", "#{commit}^", commit).lines.map(&:strip)
       files.each do |file|
@@ -233,7 +233,7 @@ module Homebrew
         EOS
       end
       [commit, files]
-    end.to_h
+    end
 
     # Reset to state before cherry-picking.
     safe_system "git", "-C", path, "reset", "--hard", original_commit
@@ -301,7 +301,7 @@ module Homebrew
 
   def changed_formulae(tap, original_commit)
     if Homebrew::EnvConfig.disable_load_formula?
-      opoo "Can't check if updated bottles are necessary as formula loading is disabled!"
+      opoo "Can't check if updated bottles are necessary as HOMEBREW_DISABLE_LOAD_FORMULA is set!"
       return
     end
 
@@ -366,7 +366,7 @@ module Homebrew
 
           unless args.no_commit?
             cherry_pick_pr!(user, repo, pr, path: tap.path, args: args)
-            if args.autosquash? && !args.dry_run?
+            if !args.no_autosquash? && !args.dry_run?
               autosquash!(original_commit, path: tap.path,
                           verbose: args.verbose?, resolve: args.resolve?, reason: args.message)
             end
